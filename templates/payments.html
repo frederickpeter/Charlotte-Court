@@ -1,0 +1,79 @@
+{% extends 'master.html' %}
+
+{% load static %}
+{% load humanize %}
+
+{% block rooms_active_class %}class="active"{% endblock %}
+
+
+{% block intro %}
+<div class="site-blocks-cover overlay" style="background-image: url(/static/images/available_rooms.jpg)" data-aos="fade" data-stellar-background-ratio="0.5">
+    <div class="container">
+      <div class="row align-items-center justify-content-center">
+        <div class="col-md-7 text-center" data-aos="fade">
+          <h1 class="mb-2">My Payments</h1>
+          <!-- <h2 class="caption">Hostel</h2> -->
+        </div>
+      </div>
+    </div>
+  </div>  
+{% endblock %}
+
+{% block body %}
+
+
+<div class="site-section bg-light">
+    <div class="container">
+      <!-- <div class="row">
+        <div class="col-md-6 mx-auto text-center mb-5 section-heading">
+          <h2 class="mb-5">Our Room Types</h2>
+        </div>
+      </div> -->
+      <!-- <div class="row"> -->
+        {% if payments %}
+        <div class="table-responsive-sm">
+            <table class="table">
+                <thead class="thead-dark">
+                    <tr>
+                    <th>Room</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+            {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.room }}</td>
+                        <td>{{ payment.amount }}</td>
+                        <td>{{ payment.balance }}</td>
+                        <td>{{ payment.status }}</td>
+                        <td>{{ payment.date_time|naturaltime }}</td>
+                        {% if payment.status == 'Pending'%}
+                            <td><button class="btn btn-danger">Make Payment</button></td>
+                        {% elif payment.status == 'Incomplete'%}
+                            <td><button class="btn btn-danger">Update Payment</button></td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                    </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+            </div>
+        {% else %}
+        <div class="col-md-6 col-lg-3 mb-5">
+            <p>No payments available</p>
+        </div>
+        {% endif %}
+      <!-- </div> -->
+    </div>
+  </div>
+
+  
+  
+
+
+{% endblock %}
