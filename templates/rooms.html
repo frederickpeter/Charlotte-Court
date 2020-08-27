@@ -67,7 +67,7 @@
       </div>
     </div>
     <div class="row">
-    {% if rooms|length > 0 %}
+    {% if rooms %}
       {% for room in rooms %}
       <div class="col-md-6 col-lg-3 mb-5">
         <div class="hotel-room text-center">
@@ -80,8 +80,14 @@
         </div>
       </div>
       {% endfor %}
+      <div style="width: 100%; text-align: center;">
+        <a href="{% url 'rooms' %}">View Room Types</a>
+      </div>
     {% else %}
+    <div style="width: 100%; text-align: center;">
       <h4>No available rooms at this moment, please try other room types</h4>
+      <a href="{% url 'rooms' %}">View Room Types</a>
+    </div>
     {% endif %}
     </div>
     {% include 'includes/pagination.html' %}
