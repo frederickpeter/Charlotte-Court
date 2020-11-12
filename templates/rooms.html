@@ -1,5 +1,5 @@
 {% extends 'master.html' %}
-
+{% load static %}
 {% block rooms_active_class %}class="active"{% endblock %}
 
 
@@ -54,16 +54,26 @@
     <div class="row">
       <div class="col-md-6 mx-auto text-center mb-5 section-heading">
         <h2 class="mb-5">{{room_type.capacity}} in a room</h2>
-        {% if room_type.price_per_day %}
-        <p><strong class="price">GHC{{ room_type.price_per_day }} per day</strong></p>
-        {% endif %}
-        {% if room_type.price_per_week %}
-        <p><strong class="price">GHC{{ room_type.price_per_week }} per week</strong></p>
-        {% endif %}
-        {% if room_type.price_per_month %}
-        <p><strong class="price">GHC{{ room_type.price_per_month }} per month</strong></p>
-        {% endif %}
-        <p><strong class="price">GHC{{ room_type.price_per_sem }} per sem</strong></p>
+        <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+            <th>Per Day</th>
+            <th>Per Week</th>
+            <th>Per Month</th>
+            <th>Per Sem</th>
+          </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{% if room_type.price_per_day %} GHC{{ room_type.price_per_day }} {% else %} - {% endif %}</td>
+              <td>{% if room_type.price_per_week %} GHC{{ room_type.price_per_week }} {% else %} - {% endif %}</td>
+              <td>{% if room_type.price_per_month %} GHC{{ room_type.price_per_month }} {% else %} - {% endif %}</td>
+              <td>{% if room_type.price_per_sem %} GHC{{ room_type.price_per_sem }} {% else %} - {% endif %}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       </div>
     </div>
     <div class="row">
@@ -81,7 +91,7 @@
       </div>
       {% endfor %}
       <div style="width: 100%; text-align: center;">
-        <a href="{% url 'rooms' %}">View Room Types</a>
+        <a href="{% url 'rooms' %}">Back to Room Types</a>
       </div>
     {% else %}
     <div style="width: 100%; text-align: center;">

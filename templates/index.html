@@ -1,5 +1,5 @@
 {% extends 'master.html' %}
-
+{% load static %}
 
 {% block home_active_class %} class="active" {% endblock%}
 
@@ -110,7 +110,7 @@
         <h2 class="mb-5">Hostel Features</h2>
       </div>
     </div>
-    {% if room_types %}
+    {% if facilities %}
       <div class="row">
         {% for facility in facilities %}
         <div class="col-sm-6 col-md-4 col-lg-3">

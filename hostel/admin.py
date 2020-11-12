@@ -7,6 +7,9 @@ from django.contrib.admin.models import ADDITION, LogEntry
 # Register your models here.
 #admin.site.register(Facility)
 
+
+
+
 #variables for the admin dashboard
 admin.site.site_header = 'Charlotte Court Administration'
 admin.site.site_title = 'Charlotte Admin'
@@ -15,7 +18,7 @@ admin.site.site_title = 'Charlotte Admin'
 
 # Unregister the provided model admin
 admin.site.unregister(User)
-# LogEntry.objects.filter(action_flag=ADDITION)
+
 
 
 @admin.register(Facility)
@@ -32,7 +35,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("user", "room", "amount", "balance", "date_time")
+    list_display = ("user", "room", "amount", "date_time")
     list_filter = ("date_time","room")
     search_fields = ("amount__contains","user__first_name__icontains","user__last_name__icontains", "room__name__contains")
     list_per_page = 10

@@ -3,14 +3,18 @@ from django.views.generic import UpdateView, ListView, DetailView
 from .models import Room_Type, Facility, Room, Payment, Student_In_Room, Reservation, Announcement
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from .forms import NewReservationForm
 from django.http import JsonResponse
 import requests
 import json
 from django.conf import settings
 from decimal import Decimal
+from django.db.models import F
 
 # Create your views here.
+
+#View for the Index Page
 class IndexView(ListView):
     model = Room_Type
     context_object_name = 'room_types'
@@ -20,6 +24,7 @@ class IndexView(ListView):
         context = super(IndexView, self).get_context_data(**kwargs)
         context['facilities'] = Facility.objects.all()[:8]
         return context
+
 
 class RoomsView(ListView):
     model = Room_Type
@@ -43,38 +48,23 @@ class AvailableRoomsView(ListView):
         queryset = self.room_type.rooms.order_by('num_of_people')
         return queryset.filter(num_of_people__lt=self.room_type.capacity)
 
+@method_decorator(login_required, name='dispatch')
 class DashboardView(ListView):
-    model = Payment
-    context_object_name = 'payments'
+    model = Reservation
+    context_object_name = 'reservations'
     template_name = 'my_dashboard.html'
+    paginate_by=4
 
     def get_context_data(self, **kwargs):
         context = super(DashboardView, self).get_context_data(**kwargs)
-        context['announcements'] = Announcement.objects.order_by('-date_time')[:2] 
-        reservation = Reservation.objects.filter(user=self.request.user).order_by('-date')[:1]
-        if reservation:
-            duration_type = reservation[0].duration_type
-            duration = reservation[0].duration
-            amount = 0
-            if duration_type == "Sem":
-                amount = reservation[0].room.room_type.price_per_sem * duration
-            elif duration_type == "Month":
-                amount = reservation[0].room.room_type.price_per_month * duration
-            elif duration_type == "Week":
-                amount = reservation[0].room.room_type.price_per_week * duration
-            elif duration_type == "Day":
-                amount = reservation[0].room.room_type.price_per_day * duration
-            payment = Payment.objects.filter(reservation=reservation)
-            if not payment:
-                context['reservations'] = reservation
-                context['amount'] = amount
-        # context['complaints'] = Complaints.objects.order_by('-date_time')[:3]
+        context['announcements'] = Announcement.objects.order_by('-date_time') 
         return context
 
     def get_queryset(self):
-        queryset = Payment.objects.select_related('reservation').filter(user=self.request.user).order_by('-date_time')[:1]
+        queryset = Reservation.objects.filter(user=self.request.user).order_by('-date')
         return queryset
 
+@login_required
 def check_room_availability(request, room):
     room = get_object_or_404(Room, pk=room)
     capacity = room.room_type.capacity
@@ -84,7 +74,7 @@ def check_room_availability(request, room):
         return JsonResponse({'status':'unavailable'})
 
 
-
+@login_required
 def payment(request):
     reference = request.GET.get('response', None)
     reservation = request.GET.get('res', None)
@@ -102,56 +92,17 @@ def payment(request):
     if success == "success":
         room = Room.objects.get(pk=room)
         reservation = Reservation.objects.get(pk=reservation)
-        duration_type = reservation.duration_type
-        duration = reservation.duration
-        status = " "
-        balance = 0.00
-
-        if duration_type == "Day":
-            if amount == duration * room.room_type.price_per_day:
-                status = "Complete"
-            elif amount < duration * room.room_type.price_per_day:
-                status = "Incomplete"
-                balance = duration * room.room_type.price_per_day - Decimal(amount)
-            else: 
-                status = "Over Paid"
-                balance = Decimal(amount) - duration * room.room_type.price_per_day 
-        elif duration_type == "Week":
-            if amount == duration * room.room_type.price_per_week:
-                status = "Complete"
-            elif amount < duration * room.room_type.price_per_week:
-                status = "Incomplete"
-                balance = duration * room.room_type.price_per_week - Decimal(amount)
-            else: 
-                status = "Over Paid"
-                balance = Decimal(amount) - duration * room.room_type.price_per_week
-        elif duration_type == "Month":
-            if amount == duration * room.room_type.price_per_month:
-                status = "Complete"
-            elif amount < duration * room.room_type.price_per_month:
-                status = "Incomplete"
-                balance = duration * room.room_type.price_per_month - Decimal(amount)
-            else: 
-                status = "Over Paid"
-                balance = Decimal(amount) - duration * room.room_type.price_per_month
-        elif duration_type == "Sem":
-            if amount == duration * room.room_type.price_per_sem:
-                status = "Complete"
-            elif amount < duration * room.room_type.price_per_sem:
-                status = "Incomplete"
-                balance = duration * room.room_type.price_per_sem - Decimal(amount)
-            else: 
-                status = "Over Paid"
-                balance = Decimal(amount) - duration * room.room_type.price_per_sem
 
         post = Payment.objects.create(
             user = request.user,
             room = room,
-            status = status,
             reservation = reservation,
-            amount = x['data']['amount'] / 100,
-            balance = balance
+            amount = amount
         )
+
+        reservation.first_payment = "Paid"
+        reservation.total_paid = F('total_paid') + amount
+        reservation.save(update_fields=["total_paid", "first_payment"])
 
         ##Increment the number of people in the room 
         room.num_of_people += 1
@@ -191,17 +142,12 @@ def reserve_room(request, room_type, room):
         return render(request, 'reserve_room.html', {'room': room, 'errors':'Sorry! The room has been fully reserved! Kindly try another room'})
 
     #get last reservation
-    #filter through paymenst to see if that reservation exists in the payment
     #if not inform the user that he cannot reserve another room when he hasnt paid for the previous reservation
-    reservation_exists = Reservation.objects.filter(user=request.user)
-    if(reservation_exists):
-        last_reservation = Reservation.objects.filter(user=request.user).order_by('-date')[:1]
-        payments = Payment.objects.filter(reservation=last_reservation)
-        if not payments:
-            return render(request, "reserve_room.html", {'errors':'Sorry! You cannot reserve another room while you have an incomplete reservation'})
-        if payments[0].status == "Incomplete":
-            return render(request, "reserve_room.html", {'errors':'Sorry! You cannot reserve another room while you have an incomplete payment'})
- 
+    last_reservation = Reservation.objects.filter(user=request.user).order_by('-date')[:1]
+    if last_reservation:
+        if last_reservation[0].total_amount > last_reservation[0].total_paid:
+             return render(request, "reserve_room.html", {'errors':'Sorry! You cannot reserve another room while you have an incomplete reservation'})
+
 
     if request.method == 'POST':
         form = NewReservationForm(request.POST)
@@ -213,12 +159,29 @@ def reserve_room(request, room_type, room):
                 reservation = form.save(commit=False)
                 reservation.room = room
                 reservation.user = request.user
-                reservation.arrival_date = form.cleaned_data.get('arrival_date')
+                #reservation.arrival_date = form.cleaned_data.get('arrival_date')
                 reservation.duration_type = form.cleaned_data.get('duration_type')
                 reservation.duration = form.cleaned_data.get('duration')
+
+                duration_type = form.cleaned_data.get('duration_type')
+                duration = form.cleaned_data.get('duration')
+                price_per_day = room.room_type.price_per_day
+                price_per_week = room.room_type.price_per_week
+                price_per_month = room.room_type.price_per_month
+                price_per_sem = room.room_type.price_per_sem
+
+                if duration_type == "Day":
+                    reservation.total_amount = duration * price_per_day
+                elif duration_type == "Week":
+                    reservation.total_amount = duration * price_per_week
+                elif duration_type == "Month":
+                    reservation.total_amount = duration * price_per_month
+                elif duration_type == "Sem":
+                    reservation.total_amount = duration * price_per_sem
+
                 reservation.save()
 
-                ##LOOK AT THIS
+
               
             else:
                 return render(request, 'reserve_room.html', {'room': room, 'errors':'Sorry! The room has been fully reserved! Kindly try another room'})
@@ -230,6 +193,7 @@ def reserve_room(request, room_type, room):
     return render(request, 'reserve_room.html', {'room': room, 'form': form})
 
 
+@method_decorator(login_required, name='dispatch')
 class PaymentsView(ListView):
     model = Payment
     context_object_name = 'payments'
@@ -240,7 +204,7 @@ class PaymentsView(ListView):
         queryset = Payment.objects.filter(user=self.request.user).order_by('-date_time')
         return queryset
 
-
+@login_required
 def delete_reservation(request, reservation):
     reservation = get_object_or_404(Reservation, pk=reservation, user=request.user)
     reservation.delete()
