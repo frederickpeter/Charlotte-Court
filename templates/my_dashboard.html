@@ -1,5 +1,5 @@
 {% extends 'master.html' %}
-
+{% load static %}
 {% block title %}My Dashboard{% endblock %}
 
 {% block intro %}
@@ -17,88 +17,126 @@
 {% block body %}
   <div class="site-section bg-light">
     <div class="container">
-      <h3>{{errors}}</h3>
-      <div class="row">
+      <!-- <div class="container"> -->
         
-        
-        <div class="col-lg-4 col-md-4 col-sm-10">
-          {% if payments %}
-            <p>Most Recent Payment:</p>
-            {% for payment in payments %}
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs">
+           <li class="nav-item">
+           <a class="nav-link active" data-toggle="tab" href="#home">Reservations</a>
+           </li>
+           <li class="nav-item">
+           <a class="nav-link" data-toggle="tab" href="#menu1">Payments</a>
+           </li>
+           <li class="nav-item">
+           <a class="nav-link" data-toggle="tab" href="#menu2">Announcements</a>
+           </li>
+        </ul>
 
-                <h4>Room: {{payment.room.name}} ({{payment.room.room_type.capacity}} in a room)</h4>
-                <p>Payment Status: <strong>{{payment.status}}</strong></p>
-                <p>Amount Paid: <strong>{{payment.amount}}</strong></p>
-                <!-- <p>Duration Type: <strong>{{payment.reservation.duration_type}}</strong></p> -->
+        <!-- Tab panes -->
+        <div class="tab-content">
+          <div class="tab-pane container active" id="home">
+             <div class="table-responsive" style="margin-top: 30px;">
+                <table class="table table-bordered">
+                <thead>
+                  
+                   <tr>
+                      <th>Date</th>
+                      <th>Room</th>
+                      <th>Duration Type</th>
+                      <th>Duration</th>
+                      <th>Total Amount</th>
+                      <th>Amount Paid</th>
+                      <th></th>
+                      <th></th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {% if reservations %}
+                   {% for reservation in reservations %}
+                   <tr>
+                      <td>{{reservation.date}}</td>
+                      <td>{{reservation.room.name}}</td>
+                      <td>{{reservation.duration_type}}</td>
+                      <td>{{reservation.duration}}</td>
+                      <td>{{reservation.total_amount}}</td>
+                      <td>{{reservation.total_paid}}</td>
+                     
+                      {% if reservation.total_amount  > reservation.total_paid %}
+                      <td><a class="btn btn-danger" href="{% url 'delete_reservation' reservation.pk %}">Cancel</a></td>
+                      <td><a class="btn btn-primary" href="#" onclick="pay('{{reservation.pk}}','{{reservation.room.pk}}', '{{reservation.total_amount}}', '{{reservation.amount_paid}}')">Pay</a></td>
+                      {% else %}
+                      <td>-</td>
+                      <td>Paid</td>
+                      {% endif %}
+                   </tr>
+                   {% endfor %}
+                   {% endif %}
 
-                <a href="{% url 'my-payments' %}">View Payments</a>
-
-            {% endfor %}
-            <hr>
-            <br>
-          {% else %}
-            <strong>NO PAYMENT HISTORY FOUND!</strong>
-          {% endif %}
-          {% if reservations %}
-            <p>Below is your reservation. Would you like to make payment?</p>
-            <p>Note: Your reservation is only considered complete after payment is made (atleast 50%)!</p>
-              {% for reservation in reservations %}
-                <h4>Room: {{reservation.room.name}} ({{reservation.room.room_type.capacity}} in a room)</h4>
-                <p>Duration Type: <strong>{{reservation.duration_type}}</strong></p>
-                <p>Duration: <strong>{{reservation.duration}}</strong></p>
-                <!-- Default input -->
-              <div class="form-group">
-                  <label for="exampleForm2">Amount</label>
-                  <input type="currency" id="pay_amount" class="form-control" value="{{amount}}">
-                  <span class="helptext">NB: 1.95% transaction charge included</span>
-              </div>
-              <div class="form-group">
-                <button class="btn btn-primary" onclick="payWithPaystack('{{reservation.pk}}', '{{reservation.room.pk}}')">Make Payment</button>
-                <a href="{% url 'delete_reservation' reservation.pk %}" class="btn btn-secondary">Cancel Reservation</a>
-              </div>
-              {% endfor %}
-          {% endif %}
-        </div>
-        
-        <div class="col-lg-8 col-md-8 col-sm-10">
-        {% if not errors and payments  %}
-          <!-- accordion -->
-          <div id="accordion">
-            <div class="card">
-              
-              <div class="card-header">
-                <a class="card-link" data-toggle="collapse" href="#collapseOne">
-                  Recent Announcements
-                </a>
-              </div>
-              {% if announcements %}
-               
-                  <!-- add 'show' to class to make it show -->
-                  <div id="collapseOne" class="collapse show" data-parent="#accordion">
-                    <div class="card-body">
-                      {% for announcement in announcements %}
-                      <a href="#"><strong>{{announcement.title}}</strong></a>
-                      <p>{{announcement.message}}</p>
-                      {% endfor %}
-                    </div>
-                  </div>
-                
-              {% else %}
-              <div id="collapseOne" class="collapse show" data-parent="#accordion">
-                <div class="card-body">
-                  <p>No anouncements</p>
+                   
+                </tbody>
+                </table>
+                <div style="margin-top:10px;">
+                   {% include 'includes/pagination.html' %}
                 </div>
-              </div>
-              {% endif %}
-            </div>
+             </div>
           </div>
-          <!-- end accordion -->
-          <a href="{% url 'coming_soon' %}">View all Announcements</a>
-        {% endif %}
+
+
+          <div class="tab-pane container fade" id="menu1">
+             <div style="margin-top: 30px;">
+                
+             </div>
+          </div>
+
+
+
+          <div class="tab-pane container fade" id="menu2">
+            <!-- <div style="margin-top: 20px;" class="col-lg-12 col-md-12 col-sm-10"> -->
+                <!-- accordion -->
+                <div id="accordion" style="margin-top: 20px;">
+                  <div class="card">
+                    
+                    <div class="card-header">
+                      <a class="card-link" data-toggle="collapse" href="#collapseOne">
+                        Recent Announcements
+                      </a>
+                    </div>
+                    {% if announcements %}
+                     
+                        <!-- add 'show' to class to make it show -->
+                        <div id="collapseOne" class="collapse show" data-parent="#accordion">
+                          <div class="card-body">
+                            {% for announcement in announcements %}
+                            <a href="#"><strong>{{announcement.title}}</strong></a>
+                            <p>{{announcement.message}}</p>
+                            {% endfor %}
+                          </div>
+                        </div>
+                        
+                      
+                    {% else %}
+                    <div id="collapseOne" class="collapse show" data-parent="#accordion">
+                      <div class="card-body">
+                        <p>No anouncements</p>
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% include 'includes/pagination.html' %}
+                </div>
+                <!-- end accordion -->
+              <!-- </div> -->
+            
+
+          </div>
+       </div>
+
+      <!-- </div> -->
+    
         </div>
       </div>
-    </div>
-  </div>
+    <!-- </div> -->
+  <!-- </div> -->
   {% endblock %}
 
   {% block jsfunctions %}
@@ -107,110 +145,104 @@
 
   <script>
 
-    function payWithPaystack(reservation, room) {
-      var token = "{{ csrf_token }}"
+function pay(reservation, room, total, amount_paid){
+         var token = "{{ csrf_token }}"
 
-      $.ajax({
-        headers:{'X-CSRFToken': token},
-            url: "check-room-availability/"+room+"/",
-            method:'POST',
-            data:{'room':room},
-            success: function (response) {
-              if(response.status=="available"){
-
-                amount = "{{amount}}"
-                if($('#pay_amount').val() < 0.5 * amount){
-                  Swal.fire(
-                  'Sorry!',
-                  `The minimum payment allowed is 50% (GHC${amount / 2})`,
-                  'error'
-                  )
-                  return
-                }
-
-                let handler = PaystackPop.setup({
-                key: 'pk_test_f513574d567ae76bdc002e2ee4fe74bc7c6e566a', // Replace with your public key
-                email: "{{user.email}}",
-                amount: amount * 100, //always multiply by 100
-                currency:"GHS",
-                firstname: "{{user.first_name}}",
-                lastname: "{{user.last_name}}",
-                onClose: function(){
-                  console.log('Window closed.');
-                },
-                callback: function(response){
-
-                  // execute the alert
-                  let timerInterval
-                  Swal.fire({
-                    title: 'Loading!',
-                    html: 'Please give us a minute to verify the payment.',
-                    timer: 20000,
-                    allowOutsideClick:false,
-                    timerProgressBar: true,
-                    onBeforeOpen: () => {
-                      Swal.showLoading()
-                      timerInterval = setInterval(() => {
-                        const content = Swal.getContent()
-                        if (content) {
-                          const b = content.querySelector('b')
-                          if (b) {
-                            b.textContent = Swal.getTimerLeft()
-                          }
-                        }
-                      }, 100)
-                    },
-                    onClose: () => {
-                      clearInterval(timerInterval)
-                    }
-                  }).then((result) => {
-                    /* Read more about handling dismissals below */
-                    if (result.dismiss === Swal.DismissReason.timer) {
-                      console.log('I was closed by the timer')
-                    }
-                  })
-
-
-                  $.ajax({
-                    url: "/hostel/verify_transaction?response="+response.reference+"&res="+reservation+"&room="+room,
-                    success: function (response) {
-                      // the transaction status is in response.data.status
-                      if(response.data.status=="success"){
-
-                        window.location.href= "{% url 'dashboard' %}"
-                      }else{
-                        Swal.fire(
-                          'Sorry!',
-                          'Your payment verification failed! Contact the Charlotte Team for assistance',
-                          'error'
-                        )
-                      }
-                    },
-                    error: function(response){
-                      alert('error')
-                    }
-                  });
-                }
-              });
-              handler.openIframe();
-
-              }else{
-                Swal.fire(
-                  'Sorry!',
-                  'The room has been fully booked. Kindly cancel the reservation and try another room',
-                  'error'
-                )
-              }
+         Swal.fire({
+            title: 'Would you like to make payment?',
+            input: 'text',
+            inputValue:total - amount_paid,
+            inputAttributes: {
+               autocapitalize: 'off'
             },
-            error: function(response){
-              alert('error')
-            }
-          });
+            showCancelButton: true,
+            confirmButtonText: 'Make Payment',
+            preConfirm: (value) => {
+               if(value >= (0.5 * total)){
+                  let handler = PaystackPop.setup({
+                     key: 'pk_test_f513574d567ae76bdc002e2ee4fe74bc7c6e566a', // Replace with your public key
+                     email: "{{user.email}}",
+                     amount: value * 100, //always multiply by 100
+                     currency:"GHS",
+                     firstname: "{{user.first_name}}",
+                     lastname: "{{user.last_name}}",
+                     onClose: function(){
+                        console.log('Window closed.');
+                     },
+                     callback: function(response){
 
-        return
+                        // console.log(response)
 
+                        // execute the alert
+                        let timerInterval
+                        Swal.fire({
+                        title: 'Loading!',
+                        html: 'Please give us a minute to verify the payment.',
+                        timer: 20000,
+                        allowOutsideClick:false,
+                        timerProgressBar: true,
+                        onBeforeOpen: () => {
+                           Swal.showLoading()
+                           timerInterval = setInterval(() => {
+                              const content = Swal.getContent()
+                              if (content) {
+                              const b = content.querySelector('b')
+                              if (b) {
+                                 b.textContent = Swal.getTimerLeft()
+                              }
+                              }
+                           }, 100)
+                        },
+                        onClose: () => {
+                           clearInterval(timerInterval)
+                        }
+                        }).then((result) => {
+                        /* Read more about handling dismissals below */
+                        if (result.dismiss === Swal.DismissReason.timer) {
+                           console.log('I was closed by the timer')
+                        }
+                        })
 
-      
-    }
+                        // verify payment
+                        $.ajax({
+                        url: "/hostel/verify_transaction?response="+response.reference+"&res="+reservation+"&room="+room,
+                        success: function (response) {
+                           // console.log(response.data)
+                          //  console.log(response)
+                           // console.log(response.data.status)
+                           // the transaction status is in response.data.status
+                           if(response.data.status=="success"){
+                            // console.log(response)
+
+                               window.location.href= "{% url 'dashboard' %}"
+                           }else{
+                              Swal.fire(
+                              'Sorry!',
+                              'Your payment verification failed! Contact the Charlotte Court Team for quick assistance',
+                              'error'
+                              )
+                           }
+                        },
+                        error: function(response){
+                           alert('error')
+                        }
+                        });
+
+                     }
+                  });
+                  handler.openIframe();
+
+               }else{
+                  Swal.fire(
+                     'Sorry!',
+                     'You must pay atleast 50% ('+ total * 0.5+ ') of the room charge',
+                     'error'
+                  )
+               }
+            },
+            allowOutsideClick: true
+         })
+
+      }
   </script>
   {% endblock %}

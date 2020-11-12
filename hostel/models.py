@@ -21,9 +21,9 @@ class Facility(models.Model):
 
 class Room_Type(models.Model):
     capacity = models.PositiveSmallIntegerField()
-    price_per_day = models.DecimalField(null=True, blank=True, max_digits=7, decimal_places=2)
-    price_per_week = models.DecimalField(null=True, blank=True, max_digits=7, decimal_places=2)
-    price_per_month = models.DecimalField(null=True, blank=True, max_digits=7, decimal_places=2)
+    price_per_day = models.DecimalField(max_digits=7, decimal_places=2)
+    price_per_week = models.DecimalField(max_digits=7, decimal_places=2)
+    price_per_month = models.DecimalField(max_digits=7, decimal_places=2)
     price_per_sem = models.DecimalField(max_digits=7, decimal_places=2)
     image1 = models.ImageField(null=True, blank=True, upload_to='static/images/', max_length=100)
     image2 = models.ImageField(null=True, blank=True, upload_to='static/images/', max_length=100)
@@ -72,6 +72,13 @@ class Reservation(models.Model):
     )
     duration_type = models.CharField(max_length=5, choices=DURATION_TYPE)
     duration = models.PositiveSmallIntegerField(help_text='Example. 2 Semesters')
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_paid = models.DecimalField(blank=True, default=0, max_digits=10, decimal_places=2)
+    STATUS = (
+        ('Paid', 'Paid'),
+        ('No Payment', 'No Payment')
+    )
+    first_payment = models.CharField(max_length=15, choices=STATUS, default="No Payment")
 
     class Meta:
         ordering = ["date"]
@@ -84,9 +91,9 @@ class Payment(models.Model):
     user = models.ForeignKey(User, related_name='payments', on_delete=models.CASCADE)
     room = models.ForeignKey(Room, related_name='payments', on_delete=models.CASCADE)
     reservation = models.ForeignKey(Reservation, related_name='payments', on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, default='Pending')
+    #status = models.CharField(max_length=50, default='Pending')
     amount = models.DecimalField(max_digits=7, decimal_places=2)
-    balance = models.DecimalField(max_digits=7, decimal_places=2, default=0.00)
+    #balance = models.DecimalField(max_digits=7, decimal_places=2, default=0.00)
     date_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
